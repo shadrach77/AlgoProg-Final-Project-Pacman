@@ -25,12 +25,13 @@ GRID_WIDTH = 15
 GRID_HEIGHT = 15
 
 # Game States
-PLAYING = 0
-GAME_OVER = 1
-WIN = 2
+START = 0
+PLAYING = 1
+GAME_OVER = 2
+WIN = 3
 
 # Global Game State
-game_state = PLAYING
+game_state = START
 
 # Create Screen
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -184,7 +185,30 @@ def reset_game():
         [1,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     ]
-    game_state = PLAYING
+    game_state = START
+
+def draw_start_screen():
+    screen.fill(BLACK)
+
+    title_font = pygame.font.Font(None, 72)
+    info_font = pygame.font.Font(None, 36)
+
+    title_text = title_font.render("PAC-MAN", True, YELLOW)
+    info_text = info_font.render("Press SPACE to Start", True, WHITE)
+    controls_text = info_font.render("Arrow Keys to Move | ESC to Quit", True, CYAN)
+
+    screen.blit(
+        title_text,
+        (SCREEN_WIDTH // 2 - title_text.get_width() // 2, SCREEN_HEIGHT // 3)
+    )
+    screen.blit(
+        info_text,
+        (SCREEN_WIDTH // 2 - info_text.get_width() // 2, SCREEN_HEIGHT // 2)
+    )
+    screen.blit(
+        controls_text,
+        (SCREEN_WIDTH // 2 - controls_text.get_width() // 2, SCREEN_HEIGHT // 2 + 40)
+    )
 
 def draw_win_screen():
     screen.fill(BLACK)
@@ -224,26 +248,33 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 running = False
-            if game_state == PLAYING:
+
+            if game_state == START:
+                if event.key == pygame.K_SPACE:
+                    game_state = PLAYING
+
+            elif game_state == PLAYING:
                 if event.key == pygame.K_UP:
-                    pacman.direction =  3
+                    pacman.direction = 3
                 elif event.key == pygame.K_DOWN:
                     pacman.direction = 1
                 elif event.key == pygame.K_LEFT:
-                    pacman.direction =2
+                    pacman.direction = 2
                 elif event.key == pygame.K_RIGHT:
                     pacman.direction = 0
-            elif game_state == GAME_OVER:
-                if event.key == pygame.K_SPACE:
-                    reset_game()
+
             elif game_state in (GAME_OVER, WIN):
                 if event.key == pygame.K_SPACE:
                     reset_game()
+                    game_state = START
 
-    if game_state == PLAYING:
+    if game_state == START:
+        draw_start_screen()
+    elif game_state == PLAYING:
         # Move pacman only if enough time has passed
         if current_time - last_pacman_move_time > pacman_move_delay:
             if pacman.move(grid):
