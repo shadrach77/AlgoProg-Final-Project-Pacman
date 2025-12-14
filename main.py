@@ -58,19 +58,85 @@ grid = [
 ]
 
 # Pac Man
-pacman = {
-    'x': 1,
-    'y': 1,
-    'direction': 3,  # 0: right, 1: down, 2: left, 3: up
-    'mouth_open': False
-}
+class PacMan:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.direction = 3  # 0:right, 1:down, 2:left, 3:up
+        self.mouth_open = False
+
+    def move(self, grid):
+        dx, dy = [(1,0), (0,1), (-1,0), (0,-1)][self.direction]
+        new_x = self.x + dx
+        new_y = self.y + dy
+
+        if grid[new_y][new_x] != 1:
+            self.x = new_x
+            self.y = new_y
+
+            if grid[new_y][new_x] == 0:
+                grid[new_y][new_x] = 2
+                return True  # pellet eaten
+        return False
+
+    def draw(self, screen):
+        x = self.x * CELL_SIZE + CELL_SIZE // 2
+        y = self.y * CELL_SIZE + CELL_SIZE // 2 + 50
+
+        mouth_opening = 45 if self.mouth_open else 0
+        pygame.draw.circle(screen, YELLOW, (x, y), CELL_SIZE // 2)
+
+        if self.direction == 0:
+            start_angle, end_angle = 360 - mouth_opening/2, mouth_opening/2
+        elif self.direction == 1:
+            start_angle, end_angle = 90 - mouth_opening/2, 90 + mouth_opening/2
+        elif self.direction == 2:
+            start_angle, end_angle = 180 - mouth_opening/2, 180 + mouth_opening/2
+        else:
+            start_angle, end_angle = 270 - mouth_opening/2, 270 + mouth_opening/2
+
+        pygame.draw.arc(
+            screen,
+            BLACK,
+            (x - CELL_SIZE//2, y - CELL_SIZE//2, CELL_SIZE, CELL_SIZE),
+            math.radians(start_angle),
+            math.radians(end_angle),
+            CELL_SIZE // 2
+        )
+
+pacman = PacMan(1, 1)
 
 # Ghosts
+class Ghost:
+    def __init__(self, x, y, color):
+        self.x = x
+        self.y = y
+        self.color = color
+
+    def move(self, grid):
+        directions = [(1,0), (0,1), (-1,0), (0,-1)]
+        random.shuffle(directions)
+
+        for dx, dy in directions:
+            new_x = self.x + dx
+            new_y = self.y + dy
+
+            if 0 <= new_x < GRID_WIDTH and 0 <= new_y < GRID_HEIGHT:
+                if grid[new_y][new_x] != 1:
+                    self.x = new_x
+                    self.y = new_y
+                    break
+
+    def draw(self, screen):
+        x = self.x * CELL_SIZE + CELL_SIZE // 2
+        y = self.y * CELL_SIZE + CELL_SIZE // 2 + 50
+        pygame.draw.circle(screen, self.color, (x, y), CELL_SIZE // 2)
+
 ghosts = [
-    {'x': 1, 'y': 13, 'color': RED},
-    {'x': 13, 'y': 1, 'color': PINK},
-    {'x': 13, 'y': 13, 'color': CYAN},
-    {'x': 11, 'y': 11, 'color': ORANGE}
+    Ghost(1, 13, RED),
+    Ghost(13, 1, PINK),
+    Ghost(13, 13, CYAN),
+    Ghost(11, 11, ORANGE)
 ]
 
 # Score
@@ -90,80 +156,15 @@ last_pacman_move_time = 0
 last_ghost_move_time = 0
 last_mouth_anim_time = 0
 
-def move_pacman():
-    global score
-    dx,dy = [(1,0), (0,1),(-1,0),(0,-1)][pacman["direction"]]
-    new_x, new_y = pacman['x'] + dx, pacman['y']+dy
-
-    if (grid[new_y][new_x] != 1):
-        pacman['x'], pacman['y'] = new_x, new_y
-        if grid[new_y][new_x] == 0:
-            grid[new_y][new_x] = 2 #mark eaten
-            score += 10
-
-def move_ghost(ghost):
-    directions = [(1,0), (0,1), (-1,0), (0,-1)]
-    random.shuffle(directions)
-    for dx, dy in directions:
-        new_x, new_y = ghost['x'] + dx, ghost['y'] + dy
-        if 0 <= new_x < GRID_WIDTH and 0 <= new_y < GRID_HEIGHT and grid[new_y][new_x] != 1:
-            ghost['x'], ghost['y'] = new_x, new_y
-            break
-
-def draw_pacman():
-    x = pacman['x'] * CELL_SIZE + CELL_SIZE // 2
-    y = pacman['y'] * CELL_SIZE + CELL_SIZE // 2 + 50
-
-    # Mouth opening angle varies between 0 (fully closed) and 45 degrees (fully open)
-    mouth_opening = 45 if pacman['mouth_open'] else 0
-
-    # Draw Pac-Man as a circle
-    pygame.draw.circle(screen, YELLOW, (x, y), CELL_SIZE // 2)
-    # Calculate the angles for the mouth based on direction
-    if pacman['direction'] == 0:  # Right
-        start_angle = 360 - mouth_opening / 2
-        end_angle = mouth_opening / 2
-    elif pacman['direction'] == 3:  # Down
-        start_angle = 90 - mouth_opening / 2
-        end_angle = 90 + mouth_opening / 2
-    elif pacman['direction'] == 2:  # Left
-        start_angle = 180 - mouth_opening / 2
-        end_angle = 180 + mouth_opening / 2
-    else:  # Up
-        start_angle = 270 - mouth_opening / 2
-        end_angle = 270 + mouth_opening / 2
-
-    # Draw the mouth using a pie shape (filled arc)
-    pygame.draw.arc(screen, BLACK, (x - CELL_SIZE // 2, y - CELL_SIZE // 2, CELL_SIZE, CELL_SIZE), math.radians(start_angle), math.radians(end_angle), CELL_SIZE // 2)
-    
-    # Draw a line from the center to create the "slice" effect
-    mouth_line_end_x = x + math.cos(math.radians(start_angle)) * CELL_SIZE // 2
-    mouth_line_end_y = y - math.sin(math.radians(start_angle)) * CELL_SIZE // 2
-    pygame.draw.line(screen, BLACK, (x, y), (mouth_line_end_x, mouth_line_end_y), 2)
-
-    mouth_line_end_x = x + math.cos(math.radians(end_angle)) * CELL_SIZE // 2
-    mouth_line_end_y = y - math.sin(math.radians(end_angle)) * CELL_SIZE // 2
-    pygame.draw.line(screen, BLACK, (x, y), (mouth_line_end_x, mouth_line_end_y), 2)
-
-def draw_ghost(ghost):
-    x = ghost['x'] * CELL_SIZE + CELL_SIZE // 2
-    y = ghost['y'] * CELL_SIZE + CELL_SIZE // 2 + 50
-    pygame.draw.circle(screen, ghost['color'], (x, y), CELL_SIZE // 2)
-
 def reset_game():
     global pacman, ghosts, score, grid, game_state
-    pacman = {
-        'x': 1,
-        'y': 1,
-        'direction': 3,
-        'mouth_open': False
-    }
+    pacman = PacMan(1, 1)
     ghosts = [
-        {'x': 1, 'y': 13, 'color': RED},
-        {'x': 13, 'y': 1, 'color': PINK},
-        {'x': 13, 'y': 13, 'color': CYAN},
-        {'x': 11, 'y': 11, 'color': ORANGE}
-    ]
+    Ghost(1, 13, RED),
+    Ghost(13, 1, PINK),
+    Ghost(13, 13, CYAN),
+    Ghost(11, 11, ORANGE)
+]
     score = 0
     grid = [
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -211,13 +212,13 @@ while running:
         elif event.type == pygame.KEYDOWN:
             if game_state == PLAYING:
                 if event.key == pygame.K_UP:
-                    pacman['direction'] =  3
+                    pacman.direction =  3
                 elif event.key == pygame.K_DOWN:
-                    pacman['direction'] = 1
+                    pacman.direction = 1
                 elif event.key == pygame.K_LEFT:
-                    pacman['direction'] =2
+                    pacman.direction =2
                 elif event.key == pygame.K_RIGHT:
-                    pacman['direction'] = 0
+                    pacman.direction = 0
             elif game_state == GAME_OVER:
                 if event.key == pygame.K_SPACE:
                     reset_game()
@@ -225,16 +226,17 @@ while running:
     if game_state == PLAYING:
         # Move Pac-Man only if enough time has passed
         if current_time - last_pacman_move_time > pacman_move_delay:
-            move_pacman()
+            if pacman.move(grid):
+                score += 10
             last_pacman_move_time = current_time    
         # Move Ghosts only if enough time has passed
         if current_time - last_ghost_move_time > ghost_move_delay:
             for ghost in ghosts:
-                move_ghost(ghost)
+                ghost.move(grid)
             last_ghost_move_time = current_time
         # Animate Pac-Man's mouth
         if current_time - last_mouth_anim_time > mouth_anim_delay:
-            pacman['mouth_open'] = not pacman['mouth_open']
+            pacman.mouth_open = not pacman.mouth_open
             last_mouth_anim_time = current_time
 
 
@@ -249,17 +251,17 @@ while running:
                     pygame.draw.circle(screen, YELLOW, (x*CELL_SIZE+CELL_SIZE//2, y*CELL_SIZE+CELL_SIZE//2+50), 3)
                     
         #Draw pacman     
-        draw_pacman()
+        pacman.draw(screen)
         #Draw ghost
         for ghost in ghosts:
-            draw_ghost(ghost)
+            ghost.draw(screen)
         #displaying the socre
         score_text = font.render(f"score:{score}", True, WHITE)
         screen.blit(score_text,(10,10))
 
         # Check for collision with ghosts
         for ghost in ghosts:
-            if pacman['x'] == ghost['x'] and pacman['y'] == ghost['y']:
+            if pacman.x == ghost.x and pacman.y == ghost.y:
                 game_state = GAME_OVER
 
     elif game_state == GAME_OVER:
