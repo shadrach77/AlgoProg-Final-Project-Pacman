@@ -90,11 +90,11 @@ class PacMan:
         if self.direction == 0:
             start_angle, end_angle = 360 - mouth_opening/2, mouth_opening/2
         elif self.direction == 1:
-            start_angle, end_angle = 90 - mouth_opening/2, 90 + mouth_opening/2
+            start_angle, end_angle = 270 - mouth_opening/2, 270 + mouth_opening/2
         elif self.direction == 2:
             start_angle, end_angle = 180 - mouth_opening/2, 180 + mouth_opening/2
         else:
-            start_angle, end_angle = 270 - mouth_opening/2, 270 + mouth_opening/2
+            start_angle, end_angle = 90 - mouth_opening/2, 90 + mouth_opening/2
 
         pygame.draw.arc(
             screen,
@@ -225,6 +225,8 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                running = False
             if game_state == PLAYING:
                 if event.key == pygame.K_UP:
                     pacman.direction =  3
@@ -242,20 +244,20 @@ while running:
                     reset_game()
 
     if game_state == PLAYING:
-        # Move Pac-Man only if enough time has passed
+        # Move pacman only if enough time has passed
         if current_time - last_pacman_move_time > pacman_move_delay:
             if pacman.move(grid):
-                # Check win condition (no pellets left)
+                # Check win condition
                 if not any(0 in row for row in grid):
                     game_state = WIN
                 score += 10
             last_pacman_move_time = current_time    
-        # Move Ghosts only if enough time has passed
+        # Move ghosts only if enough time has passed
         if current_time - last_ghost_move_time > ghost_move_delay:
             for ghost in ghosts:
                 ghost.move(grid)
             last_ghost_move_time = current_time
-        # Animate Pac-Man's mouth
+        # Animate pacman's mouth
         if current_time - last_mouth_anim_time > mouth_anim_delay:
             pacman.mouth_open = not pacman.mouth_open
             last_mouth_anim_time = current_time
@@ -277,8 +279,12 @@ while running:
         for ghost in ghosts:
             ghost.draw(screen)
         #displaying the socre
-        score_text = font.render(f"score:{score}", True, WHITE)
+        score_text = font.render(f"Score: {score}", True, WHITE)
         screen.blit(score_text,(10,10))
+
+        # Screen instruction
+        instructions = font.render("Arrow Keys: Move | ESC: Quit", True, WHITE)
+        screen.blit(instructions, (200, 10))
 
         # Check for collision with ghosts
         for ghost in ghosts:
