@@ -27,6 +27,7 @@ GRID_HEIGHT = 15
 # Game States
 PLAYING = 0
 GAME_OVER = 1
+WIN = 2
 
 # Global Game State
 game_state = PLAYING
@@ -185,6 +186,20 @@ def reset_game():
     ]
     game_state = PLAYING
 
+def draw_win_screen():
+    screen.fill(BLACK)
+    win_font = pygame.font.Font(None, 64)
+    score_font = pygame.font.Font(None, 48)
+    restart_font = pygame.font.Font(None, 36)
+
+    win_text = win_font.render("YOU WIN!", True, YELLOW)
+    score_text = score_font.render(f"Score: {score}", True, WHITE)
+    restart_text = restart_font.render("Press SPACE to restart", True, CYAN)
+
+    screen.blit(win_text, (SCREEN_WIDTH // 2 - win_text.get_width() // 2, SCREEN_HEIGHT // 3))
+    screen.blit(score_text, (SCREEN_WIDTH // 2 - score_text.get_width() // 2, SCREEN_HEIGHT // 2))
+    screen.blit(restart_text, (SCREEN_WIDTH // 2 - restart_text.get_width() // 2, 2 * SCREEN_HEIGHT // 3))
+
 def draw_game_over():
     screen.fill(BLACK)
     game_over_font = pygame.font.Font(None, 64)
@@ -222,11 +237,17 @@ while running:
             elif game_state == GAME_OVER:
                 if event.key == pygame.K_SPACE:
                     reset_game()
+            elif game_state in (GAME_OVER, WIN):
+                if event.key == pygame.K_SPACE:
+                    reset_game()
 
     if game_state == PLAYING:
         # Move Pac-Man only if enough time has passed
         if current_time - last_pacman_move_time > pacman_move_delay:
             if pacman.move(grid):
+                # Check win condition (no pellets left)
+                if not any(0 in row for row in grid):
+                    game_state = WIN
                 score += 10
             last_pacman_move_time = current_time    
         # Move Ghosts only if enough time has passed
@@ -265,7 +286,9 @@ while running:
                 game_state = GAME_OVER
 
     elif game_state == GAME_OVER:
-        draw_game_over()      
+        draw_game_over()
+    elif game_state == WIN:
+        draw_win_screen()    
 
     # update the display
     pygame.display.flip()
