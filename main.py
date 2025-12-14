@@ -144,6 +144,9 @@ ghosts = [
 # Score
 score = 0
 
+# Lives
+lives = 2
+
 # Game Loop
 clock = pygame.time.Clock()
 running = True
@@ -159,7 +162,7 @@ last_ghost_move_time = 0
 last_mouth_anim_time = 0
 
 def reset_game():
-    global pacman, ghosts, score, grid, game_state
+    global pacman, ghosts, score, grid, game_state, lives
     pacman = PacMan(1, 1)
     ghosts = [
     Ghost(1, 13, RED),
@@ -168,6 +171,7 @@ def reset_game():
     Ghost(11, 11, ORANGE)
 ]
     score = 0
+    lives = 2
     grid = [
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [1,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
@@ -274,6 +278,7 @@ while running:
 
     if game_state == START:
         draw_start_screen()
+
     elif game_state == PLAYING:
         # Move pacman only if enough time has passed
         if current_time - last_pacman_move_time > pacman_move_delay:
@@ -306,21 +311,37 @@ while running:
                     
         #Draw pacman     
         pacman.draw(screen)
+
         #Draw ghost
         for ghost in ghosts:
             ghost.draw(screen)
-        #displaying the socre
-        score_text = font.render(f"Score: {score}", True, WHITE)
-        screen.blit(score_text,(10,10))
 
-        # Screen instruction
-        instructions = font.render("Arrow Keys: Move | ESC: Quit", True, WHITE)
-        screen.blit(instructions, (200, 10))
+        # HUD
+        score_text = font.render(f"Score: {score}", True, WHITE)
+        lives_text = font.render(f"Lives: {lives}", True, WHITE)
+        instructions = font.render("Arrow Keys: Move", True, WHITE)
+
+        screen.blit(score_text, (10, 10))
+        screen.blit(lives_text, (150, 10))
+        screen.blit(instructions, (300, 10))
 
         # Check for collision with ghosts
         for ghost in ghosts:
             if pacman.x == ghost.x and pacman.y == ghost.y:
-                game_state = GAME_OVER
+                lives -= 1
+
+                if lives <= 0:
+                    game_state = GAME_OVER
+                else:
+                    # Reset positions only
+                    pacman = PacMan(1, 1)
+                    ghosts = [
+                        Ghost(1, 13, RED),
+                        Ghost(13, 1, PINK),
+                        Ghost(13, 13, CYAN),
+                        Ghost(11, 11, ORANGE)
+                    ]
+                break
 
     elif game_state == GAME_OVER:
         draw_game_over()
