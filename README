@@ -1,0 +1,20 @@
+# Pac-Man Game (Python)
+This project is a grid-based Pac-Man game developed using Python and the pygame library as part of the Algorithm and Programming final project.
+
+## Features
+- Object-Oriented design (PacMan and Ghost classes)
+- Grid-based movement and collision detection
+- Multiple game states (Start, Playing, Win, Game Over)
+- Scoring system and lives mechanic
+
+## How to Run
+1. Install pygame
+   pip install pygame
+2. Run the game
+   python main.py
+
+## Documentation
+Full project documentation and poster can be found in the `docs/` and `poster/` folders.
+
+## Author
+Shadrach Mulia Djohan
